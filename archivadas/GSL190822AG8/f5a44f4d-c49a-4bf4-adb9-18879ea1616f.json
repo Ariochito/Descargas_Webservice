@@ -1,0 +1,18 @@
+{
+    "request_id": "f5a44f4d-c49a-4bf4-adb9-18879ea1616f",
+    "estado": "listo",
+    "paquetes": [
+        "F5A44F4D-C49A-4BF4-ADB9-18879EA1616F_01"
+    ],
+    "verifications": [
+        {
+            "timestamp": "2025-06-20 09:36:21",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud está lista. 1 paquete(s) disponible(s)",
+            "paquetes": [
+                "F5A44F4D-C49A-4BF4-ADB9-18879EA1616F_01"
+            ],
+            "isFinished": true
+        }
+    ]
+}

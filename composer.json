@@ -1,0 +1,12 @@
+{
+    "require": {
+        "phpcfdi/sat-ws-descarga-masiva": "^1.0",
+        "guzzlehttp/guzzle": "^7.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    }
+}
+

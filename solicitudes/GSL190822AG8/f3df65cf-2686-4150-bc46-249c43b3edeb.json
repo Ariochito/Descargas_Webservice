@@ -1,0 +1,100 @@
+{
+    "request_id": "f3df65cf-2686-4150-bc46-249c43b3edeb",
+    "fecha_solicitud": "2025-06-18 13:58:45",
+    "estado": "listo",
+    "paquetes": [
+        "F3DF65CF-2686-4150-BC46-249C43B3EDEB_01"
+    ],
+    "tipo": "recibidos",
+    "formato": "xml",
+    "status": "active",
+    "fecha_inicio": "2022-01-01",
+    "fecha_fin": "2022-12-31",
+    "verifications": [
+        {
+            "timestamp": "2025-06-18 14:01:09",
+            "codigoEstado": 5000,
+            "mensaje": "Solicitud Aceptada",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-18 14:03:04",
+            "codigoEstado": 5000,
+            "mensaje": "Solicitud Aceptada",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-18 14:20:07",
+            "codigoEstado": 5000,
+            "mensaje": "Solicitud Aceptada",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-18 14:20:27",
+            "codigoEstado": 5000,
+            "mensaje": "Solicitud Aceptada",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-18 14:27:53",
+            "codigoEstado": 5000,
+            "mensaje": "Solicitud Aceptada",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-18 15:17:24",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-18 16:58:56",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-19 08:56:24",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-19 12:29:10",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-19 17:09:46",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-20 09:36:12",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud está lista. 1 paquete(s) disponible(s)",
+            "paquetes": [
+                "F3DF65CF-2686-4150-BC46-249C43B3EDEB_01"
+            ],
+            "isFinished": true
+        }
+    ],
+    "downloads": [
+        {
+            "packageId": "F3DF65CF-2686-4150-BC46-249C43B3EDEB_01",
+            "timestamp": "2025-06-20 09:47:02"
+        }
+    ]
+}

@@ -1,0 +1,44 @@
+{
+    "request_id": "78fe0936-e4b0-4e90-93c5-af6382e1575e",
+    "estado": "listo",
+    "paquetes": [
+        "78FE0936-E4B0-4E90-93C5-AF6382E1575E_01"
+    ],
+    "verifications": [
+        {
+            "timestamp": "2025-06-18 11:28:32",
+            "codigoEstado": 5000,
+            "mensaje": "Solicitud Aceptada",
+            "paquetes": [
+                "78FE0936-E4B0-4E90-93C5-AF6382E1575E_01"
+            ],
+            "isFinished": true
+        },
+        {
+            "timestamp": "2025-06-18 14:28:31",
+            "codigoEstado": 5000,
+            "mensaje": "Solicitud Aceptada",
+            "paquetes": [
+                "78FE0936-E4B0-4E90-93C5-AF6382E1575E_01"
+            ],
+            "isFinished": true
+        },
+        {
+            "timestamp": "2025-06-18 15:18:01",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud está lista. 1 paquete(s) disponible(s)",
+            "paquetes": [
+                "78FE0936-E4B0-4E90-93C5-AF6382E1575E_01"
+            ],
+            "isFinished": true
+        }
+    ],
+    "downloads": [
+        {
+            "packageId": "78FE0936-E4B0-4E90-93C5-AF6382E1575E_01",
+            "timestamp": "2025-06-18 15:21:41",
+            "filename": "78fe0936-e4b0-4e90-93c5-af6382e1575e_78FE0936-E4B0-4E90-93C5-AF6382E1575E_01.zip",
+            "size": 2142
+        }
+    ]
+}

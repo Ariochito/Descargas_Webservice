@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión Descarga Masiva SAT</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .estado-pendiente { @apply bg-yellow-100 text-yellow-800; }
+    .estado-procesando { @apply bg-blue-100 text-blue-800; }
+    .estado-listo { @apply bg-green-100 text-green-800; }
+    .estado-terminado_sin_datos { @apply bg-gray-100 text-gray-800; }
+    .estado-expirado { @apply bg-red-100 text-red-800; }
+    .estado-fallido { @apply bg-red-100 text-red-800; }
+    .estado-rechazado { @apply bg-red-100 text-red-800; }
+    .estado-error { @apply bg-red-100 text-red-800; }
+    .estado-desconocido { @apply bg-purple-100 text-purple-800; }
+  </style>
+</head>
+<body class="bg-gray-100 p-8">
+  <h1 class="text-3xl font-bold text-center mb-6">Gestión Descarga Masiva SAT</h1>
+  <nav class="flex justify-center space-x-4 mb-8">
+    <button data-tab="config" class="active px-4 py-2 bg-blue-500 text-white rounded">Configuración</button>
+    <button data-tab="solicitar" class="px-4 py-2 hover:bg-green-500 hover:text-white rounded">Solicitar</button>
+    <button data-tab="verificar" class="px-4 py-2 hover:bg-yellow-500 hover:text-white rounded">Verificar</button>
+    <button data-tab="descargar" class="px-4 py-2 hover:bg-purple-500 hover:text-white rounded">Descargar</button>
+    <button data-tab="explorar" class="px-4 py-2 hover:bg-indigo-500 hover:text-white rounded">Explorar</button>
+  </nav>
+  <div id="content" class="max-w-7xl mx-auto"></div>
+  <div id="message" class="max-w-7xl mx-auto hidden mt-4"></div>
+  <div id="loadingMessage" class="max-w-7xl mx-auto hidden text-center text-blue-600 font-medium animate-pulse"></div>
+
+  <!-- Modal Historial -->
+  <div id="historyModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg max-w-4xl w-full p-6 m-4 max-h-96 overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-semibold">Historial de Verificaciones</h3>
+        <button id="closeHistory" class="text-gray-600 hover:text-gray-900 text-2xl">&times;</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="border px-2 py-1">Fecha/Hora</th>
+              <th class="border px-2 py-1">Código</th>
+              <th class="border px-2 py-1">Mensaje</th>
+              <th class="border px-2 py-1">Paquetes</th>
+              <th class="border px-2 py-1">Finalizado</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <!-- Llenado dinámico -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Explorar Paquete -->
+  <div id="exploreModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg max-w-6xl w-full p-6 m-4 max-h-96 overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-semibold">Contenido del Paquete</h3>
+        <button id="closeExplore" class="text-gray-600 hover:text-gray-900 text-2xl">&times;</button>
+      </div>
+      <div id="packageInfo" class="mb-4 p-3 bg-blue-50 rounded"></div>
+      <div class="overflow-x-auto">
+        <div id="packageContent">
+          <!-- Llenado dinámico -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let cerFile, keyFile, password = '';
+    let currentSolicitudes = []; // Cache para las solicitudes actuales
+    
+    const tabs = document.querySelectorAll('nav button');
+    tabs.forEach(btn => btn.addEventListener('click', () => {
+      tabs.forEach(b => b.classList.remove('active','bg-blue-500','text-white'));
+      btn.classList.add('active','bg-blue-500','text-white');
+      clearContent();
+      if (btn.dataset.tab === 'config')    loadConfigTab();
+      if (btn.dataset.tab === 'solicitar') loadSolicitarTab();
+      if (btn.dataset.tab === 'verificar') loadVerificarTab();
+      if (btn.dataset.tab === 'descargar') loadDescargarTab();
+      if (btn.dataset.tab === 'explorar')  loadExplorarTab();
+    }));
+
+    function showMessage(msg, type='info') {
+      const d = document.getElementById('message');
+      d.textContent = msg;
+      d.className = `mt-4 p-4 rounded w-full text-center ${{
+        error: 'bg-red-100 text-red-700',
+        success: 'bg-green-100 text-green-700',
+        info: 'bg-blue-100 text-blue-700'
+      }[type]}`;
+      d.classList.remove('hidden');
+    }
+    function showLoading(msg) {
+      const d = document.getElementById('loadingMessage');
+      d.textContent = msg;
+      d.classList.remove('hidden');
+      document.getElementById('message').classList.add('hidden');
+    }
+    function hideLoading() {
+      document.getElementById('loadingMessage').classList.add('hidden');
+    }
+    async function postData(fd) {
+      try {
+        const resp = await fetch('api.php', { method:'POST', body: fd });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const disp = resp.headers.get('Content-Disposition');
+        if (disp && disp.includes('attachment')) return resp.blob();
+        return resp.json();
+      } catch(e) {
+        return { success:false, message: e.message };
+      }
+    }
+    function clearContent() {
+      document.getElementById('content').innerHTML = '';
+      document.getElementById('message').classList.add('hidden');
+      hideLoading();
+    }
+
+    function getEstadoBadge(estado) {
+      const badges = {
+        pendiente: 'Pendiente',
+        procesando: 'Procesando',
+        listo: 'Listo',
+        terminado_sin_datos: 'Sin Datos',
+        expirado: 'Expirado',
+        fallido: 'Fallido',
+        rechazado: 'Rechazado',
+        error: 'Error',
+        desconocido: 'Desconocido'
+      };
+      return `<span class="px-2 py-1 rounded text-xs font-medium estado-${estado}">${badges[estado] || estado}</span>`;
+    }
+
+    // 1. Configuración FIEL
+    function loadConfigTab() {
+      document.getElementById('content').innerHTML = `
+        <div class="space-y-4">
+          <h2 class="text-2xl font-semibold text-center mb-4">Configuración FIEL</h2>
+          <form id="formConfig" enctype="multipart/form-data" class="space-y-4">
+            <div><label class="block mb-1 font-medium">Archivo CER</label><input class="w-full p-2 border rounded" type="file" id="cerfile" accept=".cer" required></div>
+            <div><label class="block mb-1 font-medium">Archivo KEY</label><input class="w-full p-2 border rounded" type="file" id="keyfile" accept=".key" required></div>
+            <div><label class="block mb-1 font-medium">Contraseña</label><input class="w-full p-2 border rounded" type="password" id="password" autocomplete="current-password" required></div>
+            <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Guardar y Validar</button>
+          </form>
+        </div>`;
+      document.getElementById('cerfile').addEventListener('change', e => cerFile = e.target.files[0]);
+      document.getElementById('keyfile').addEventListener('change', e => keyFile = e.target.files[0]);
+      document.getElementById('formConfig').addEventListener('submit', async e => {
+        e.preventDefault();
+        password = document.getElementById('password').value.trim();
+        if (!cerFile||!keyFile||!password) return showMessage('Completa todos los campos','error');
+        const fd = new FormData();
+        fd.append('action','guardarConfig');
+        fd.append('cerfile', cerFile);
+        fd.append('keyfile', keyFile);
+        fd.append('password', password);
+        showLoading('Validando FIEL...');
+        const res = await postData(fd);
+        hideLoading();
+        if (res.success) showMessage(`FIEL validada correctamente. RFC: ${res.rfc}`,'success');
+        else showMessage(res.message,'error');
+      });
+    }
+
+    // 2. Solicitar descarga
+    function loadSolicitarTab() {
+      document.getElementById('content').innerHTML = `
+        <div class="space-y-4">
+          <h2 class="text-2xl font-semibold text-center mb-4">Solicitar Descarga</h2>
+          <form id="formSolicitar" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div><label class="block mb-1 font-medium">Fecha Inicio</label><input class="w-full p-2 border rounded" type="date" id="fechaInicio" required></div>
+              <div><label class="block mb-1 font-medium">Fecha Fin</label><input class="w-full p-2 border rounded" type="date" id="fechaFin" required></div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div><label class="block mb-1 font-medium">Tipo</label>
+                <select id="tipo" class="w-full p-2 border rounded" required>
+                  <option value="">-- Seleccionar --</option>
+                  <option value="emitidos">Emitidos</option>
+                  <option value="recibidos">Recibidos</option>
+                </select>
+              </div>
+              <div><label class="block mb-1 font-medium">Formato</label>
+                <select id="format" class="w-full p-2 border rounded" required>
+                  <option value="xml">XML (Comprobantes completos)</option>
+                  <option value="metadata">Metadata (Solo información)</option>
+                </select>
+              </div>
+              <div><label class="block mb-1 font-medium">Estado Comprobante</label>
+                <select id="status" class="w-full p-2 border rounded">
+                  <option value="active">Vigente</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700">Enviar Solicitud</button>
+          </form>
+          <div id="resultadoSolicitud" class="hidden mt-4 p-4 bg-gray-50 border rounded"></div>
+        </div>`;
+      
+      const formatEl = document.getElementById('format');
+      const statusEl = document.getElementById('status');
+      
+      formatEl.addEventListener('change', () => {
+        if (formatEl.value === 'xml') {
+          statusEl.innerHTML = `<option value="active">Vigente</option>`;
+          statusEl.disabled = true;
+        } else {
+          statusEl.innerHTML = `
+            <option value="all">Todos</option>
+            <option value="active">Vigente</option>
+            <option value="cancelled">Cancelado</option>
+          `;
+          statusEl.disabled = false;
+        }
+      });
+      
+      document.getElementById('formSolicitar').addEventListener('submit', async e => {
+        e.preventDefault();
+        const f1 = document.getElementById('fechaInicio').value;
+        const f2 = document.getElementById('fechaFin').value;
+        const t  = document.getElementById('tipo').value;
+        const fmt= formatEl.value;
+        const st = statusEl.value;
+        
+        if (!cerFile||!keyFile||!password) return showMessage('Valida la FIEL primero','error');
+        if (!f1||!f2||!t)    return showMessage('Completa todos los campos','error');
+        if (new Date(f2) < new Date(f1)) return showMessage('La fecha fin debe ser posterior a la fecha inicio','error');
+        
+        const fd = new FormData();
+        fd.append('action','solicitar');
+        fd.append('cerfile', cerFile);
+        fd.append('keyfile', keyFile);
+        fd.append('password', password);
+        fd.append('fechaInicio', f1);
+        fd.append('fechaFin', f2);
+        fd.append('tipo', t);
+        fd.append('format', fmt);
+        fd.append('status', st);
+        
+        showLoading('Enviando solicitud al SAT...');
+        const r = await postData(fd);
+        hideLoading();
+        
+        const out = document.getElementById('resultadoSolicitud');
+        out.classList.remove('hidden');
+        out.innerHTML = r.success
+          ? `<p class="text-green-700 font-medium">✅ Solicitud aceptada</p><p class="text-sm text-gray-600">ID de Solicitud: ${r.requestId}</p>`
+          : `<p class="text-red-700 font-medium">❌ Error: ${r.message}</p>`;
+        showMessage(r.success?'Solicitud enviada correctamente':'Error al enviar solicitud', r.success?'success':'error');
+      });
+    }
+
+    // 3. Verificar Solicitudes - MEJORADO
+    function loadVerificarTab() {
+      document.getElementById('content').innerHTML = `
+        <div class="space-y-4">
+          <h2 class="text-2xl font-semibold text-center mb-4">Verificar Estado de Solicitudes</h2>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <button id="btnRefresh" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">🔄 Recargar Lista</button>
+            <button id="btnVerifyAll" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600" disabled>Verificar Todas</button>
+            <button id="btnVerifyPending" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600" disabled>Verificar Pendientes</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table id="tblRequests" class="min-w-full bg-white shadow rounded">
+              <thead class="bg-gray-200">
+                <tr>
+                  <th class="px-3 py-2 border text-left">Solicitud</th>
+                  <th class="px-3 py-2 border text-left">Estado</th>
+                  <th class="px-3 py-2 border text-left">Fecha Solicitud</th>
+                  <th class="px-3 py-2 border text-left">Período</th>
+                  <th class="px-3 py-2 border text-left">Tipo/Formato</th>
+                  <th class="px-3 py-2 border text-left">Paquetes</th>
+                  <th class="px-3 py-2 border text-center">Historial</th>
+                  <th class="px-3 py-2 border text-center">Acción</th>
+                </tr>
+              </thead>
+              <tbody><tr><td colspan="8" class="text-center p-4">Cargando solicitudes...</td></tr></tbody>
+            </table>
+          </div>
+        </div>`;
+      
+      const tblBody = document.querySelector('#tblRequests tbody');
+      const btnAll  = document.getElementById('btnVerifyAll');
+      const btnPending = document.getElementById('btnVerifyPending');
+      const btnRefresh = document.getElementById('btnRefresh');
+
+      async function loadRequests() {
+        if (!cerFile||!keyFile||!password) return showMessage('Valida la FIEL primero','error');
+        showLoading('Cargando solicitudes...');
+        const fd = new FormData();
+        fd.append('action','listarSolicitudes');
+        fd.append('cerfile', cerFile);
+        fd.append('keyfile', keyFile);
+        fd.append('password', password);
+        const r = await postData(fd);
+        hideLoading();
+        if (!r.success) return showMessage(r.message,'error');
+
+        currentSolicitudes = r.solicitudes;
+        renderTable();
+        btnAll.disabled = !currentSolicitudes.length;
+        btnPending.disabled = !currentSolicitudes.some(s => ['pendiente', 'procesando'].includes(s.estado));
+      }
+
+      function renderTable() {
+        tblBody.innerHTML = '';
+        if (!currentSolicitudes.length) {
+          tblBody.innerHTML = '<tr><td colspan="8" class="text-center p-4 text-gray-500">No hay solicitudes registradas</td></tr>';
+          return;
+        }
+        
+        currentSolicitudes.forEach((s, index) => {
+          const row = document.createElement('tr');
+          row.className = 'hover:bg-gray-50';
+          
+          const paquetesCount = Array.isArray(s.paquetes) ? s.paquetes.length : 0;
+          const paquetesText = paquetesCount > 0 ? `${paquetesCount} paquete(s)` : '–';
+          
+          row.innerHTML = `
+            <td class="px-3 py-2 border font-mono text-sm">${s.requestId.substring(0, 8)}...</td>
+            <td class="px-3 py-2 border" data-estado>${getEstadoBadge(s.estado)}</td>
+            <td class="px-3 py-2 border text-sm">${s.fecha_solicitud}</td>
+            <td class="px-3 py-2 border text-sm">${s.fecha_inicio} al ${s.fecha_fin}</td>
+            <td class="px-3 py-2 border text-sm">
+              <div>${s.tipo === 'emitidos' ? 'Emitidos' : 'Recibidos'}</div>
+              <div class="text-xs text-gray-500">${s.formato === 'xml' ? 'XML' : 'Metadata'}</div>
+            </td>
+            <td class="px-3 py-2 border text-sm" data-paquetes>
+              <span class="${paquetesCount > 0 ? 'text-green-600 font-medium' : 'text-gray-500'}">${paquetesText}</span>
+            </td>
+            <td class="px-3 py-2 border text-center">
+              <button class="history-btn bg-blue-400 hover:bg-blue-500 text-white px-2 py-1 rounded text-xs" title="Ver historial">📜</button>
+            </td>
+            <td class="px-3 py-2 border text-center">
+              <button class="verify-btn bg-yellow-400 hover:bg-yellow-500 text-white px-2 py-1 rounded text-xs" title="Verificar estado">🔍</button>
+            </td>`;
+          
+          row.querySelector('.verify-btn').addEventListener('click', () => verifyRow(s.requestId, index));
+          row.querySelector('.history-btn').addEventListener('click', () => showHistoryModal(s.verifications||[], s.requestId));
+          tblBody.appendChild(row);
+        });
+      }
+
+      async function verifyRow(requestId, index) {
+        const row = tblBody.children[index];
+        const estadoCell   = row.querySelector('[data-estado]');
+        const paquetesCell = row.querySelector('[data-paquetes]');
+        const btn          = row.querySelector('.verify-btn');
+        
+        btn.textContent = '⏳';
+        btn.disabled = true;
+        
+        showLoading(`Verificando ${requestId.substring(0, 8)}...`);
+        const fd = new FormData();
+        fd.append('action','verificar');
+        fd.append('cerfile', cerFile);
+        fd.append('keyfile', keyFile);
+        fd.append('password', password);
+        fd.append('requestId', requestId);
+        const res = await postData(fd);
+        hideLoading();
+        
+        btn.textContent = '🔍';
+        btn.disabled = false;
+        
+        if (res.success) {
+          currentSolicitudes[index].estado = res.estado;
+          currentSolicitudes[index].paquetes = res.paquetes;
+          if (!currentSolicitudes[index].verifications) {
+            currentSolicitudes[index].verifications = [];
+          }
+          currentSolicitudes[index].verifications.push({
+            timestamp: new Date().toLocaleString('es-MX'),
+            codigoEstado: res.codigoEstado,
+            mensaje: res.mensaje,
+            paquetes: res.paquetes,
+            isFinished: res.isFinished
+          });
+          
+          estadoCell.innerHTML = getEstadoBadge(res.estado);
+          const paquetesCount = res.paquetes.length;
+          const paquetesText = paquetesCount > 0 ? `${paquetesCount} paquete(s)` : '–';
+          paquetesCell.innerHTML = `<span class="${paquetesCount > 0 ? 'text-green-600 font-medium' : 'text-gray-500'}">${paquetesText}</span>`;
+          
+          showMessage(`${requestId.substring(0, 8)}: ${res.mensaje}`, res.estado === 'listo' ? 'success' : 'info');
+        } else {
+          estadoCell.innerHTML = getEstadoBadge('error');
+          showMessage(`Error (${requestId.substring(0, 8)}): ${res.message}`,'error');
+        }
+      }
+
+      btnAll.addEventListener('click', async () => {
+        showMessage('Verificando todas las solicitudes...', 'info');
+        for (let i = 0; i < currentSolicitudes.length; i++) {
+          await verifyRow(currentSolicitudes[i].requestId, i);
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
+        showMessage('Verificación masiva completada', 'success');
+      });
+
+      btnPending.addEventListener('click', async () => {
+        const pendingIndices = currentSolicitudes
+          .map((s, i) => ({ estado: s.estado, index: i }))
+          .filter(item => ['pendiente', 'procesando'].includes(item.estado))
+          .map(item => item.index);
+        
+        if (pendingIndices.length === 0) return showMessage('No hay solicitudes pendientes', 'info');
+        
+        showMessage(`Verificando ${pendingIndices.length} solicitud(es) pendiente(s)...`, 'info');
+        for (const i of pendingIndices) {
+          await verifyRow(currentSolicitudes[i].requestId, i);
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
+        showMessage('Verificación de pendientes completada', 'success');
+      });
+
+      btnRefresh.addEventListener('click', loadRequests);
+      loadRequests();
+    }
+
+    // Modal historial - MEJORADO
+    function showHistoryModal(verifs, requestId) {
+      const body = document.getElementById('historyBody');
+      body.innerHTML = '';
+      
+      if (!verifs || !verifs.length) {
+        body.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-gray-500">Sin historial de verificaciones</td></tr>';
+      } else {
+        const sortedVerifs = [...verifs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        sortedVerifs.forEach(v => {
+          const row = document.createElement('tr');
+          row.className = 'hover:bg-gray-50';
+          row.innerHTML = `
+            <td class="border px-2 py-1 text-sm">${v.timestamp || 'N/A'}</td>
+            <td class="border px-2 py-1 text-sm font-mono">${v.codigoEstado || 'N/A'}</td>
+            <td class="border px-2 py-1 text-sm" title="${v.mensaje}">${(v.mensaje || 'N/A').substring(0, 60)}${v.mensaje && v.mensaje.length > 60 ? '...' : ''}</td>
+            <td class="border px-2 py-1 text-sm">${Array.isArray(v.paquetes) && v.paquetes.length > 0 ? v.paquetes.length + ' paquete(s)' : '–'}</td>
+            <td class="border px-2 py-1 text-center">${v.isFinished ? '✅' : '⏳'}</td>`;
+          body.appendChild(row);
+        });
+      }
+      
+      document.querySelector('#historyModal h3').textContent = `Historial - ${requestId}`;
+      document.getElementById('historyModal').classList.remove('hidden');
+    }
+    
+    document.getElementById('closeHistory').addEventListener('click', () => {
+      document.getElementById('historyModal').classList.add('hidden');
+    });
+
+    // 4. Descargar Paquetes - COMPLETADO
+    function loadDescargarTab() {
+      document.getElementById('content').innerHTML = `
+        <div class="space-y-4">
+          <h2 class="text-2xl font-semibold text-center mb-4">Descargar Paquetes</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block mb-1 font-medium">Solicitud con Paquetes</label>
+              <select id="selectDownloadReq" class="w-full p-2 border rounded">
+                <option value="">Cargando...</option>
+              </select>
+            </div>
+            <div>
+              <label class="block mb-1 font-medium">Paquete</label>
+              <select id="selectDownloadPkg" class="w-full p-2 border rounded" disabled>
+                <option value="">Selecciona solicitud primero</option>
+              </select>
+            </div>
+            <div class="flex items-end">
+              <button id="btnDownload" class="w-full bg-purple-600 text-white p-2 rounded hover:bg-purple-700" disabled>Descargar ZIP</button>
+            </div>
+          </div>
+          <div id="downloadInfo" class="hidden mt-4 p-4 bg-blue-50 border border-blue-200 rounded">
+            <h3 class="font-semibold mb-2">Información del Paquete Seleccionado</h3>
+            <div id="packageDetails"></div>
+          </div>
+        </div>`;
+      
+      const selReq = document.getElementById('selectDownloadReq');
+      const selPkg = document.getElementById('selectDownloadPkg');
+      const btn    = document.getElementById('btnDownload');
+      const info   = document.getElementById('downloadInfo');
+      const details = document.getElementById('packageDetails');
+
+      let readySolicitudes = [];
+
+      async function loadReqs() {
+        if (!cerFile||!keyFile||!password) return showMessage('Valida la FIEL primero','error');
+        
+        showLoading('Cargando solicitudes con paquetes...');
+        const fd = new FormData();
+        fd.append('action','listarSolicitudes');
+        fd.append('cerfile', cerFile);
+        fd.append('keyfile', keyFile);
+        fd.append('password', password);
+        const r = await postData(fd);
+        hideLoading();
+        
+        if (!r.success) return showMessage(r.message,'error');
+        
+        readySolicitudes = r.solicitudes.filter(s => s.estado==='listo' && Array.isArray(s.paquetes) && s.paquetes.length > 0);
+        
+        if (readySolicitudes.length === 0) {
+          selReq.innerHTML = '<option value="">No hay paquetes listos para descargar</option>';
+          selReq.disabled = true;
+          return;
+        }
+        
+        selReq.innerHTML = '<option value="">-- Selecciona una solicitud --</option>' + 
+          readySolicitudes.map(s => {
+            const paquetesCount = s.paquetes.length;
+            return `<option value="${s.requestId}">${s.requestId.substring(0, 12)}... (${paquetesCount} paquete${paquetesCount > 1 ? 's' : ''})</option>`;
+          }).join('');
+        selReq.disabled = false;
+        
+        // Auto-seleccionar si solo hay una opción
+        if (readySolicitudes.length === 1) {
+          selReq.value = readySolicitudes[0].requestId;
+          fetchPackages(readySolicitudes[0]);
+        }
+      }
+
+      selReq.addEventListener('change', () => {
+        const reqId = selReq.value;
+        if (!reqId) {
+          selPkg.innerHTML = '<option value="">Selecciona solicitud primero</option>';
+          selPkg.disabled = true;
+          btn.disabled = true;
+          info.classList.add('hidden');
+          return;
+        }
+        fetchPackages(reqId);
+      });
+
+      async function fetchPackages(reqId) {
+        const solicitud = readySolicitudes.find(s => s.requestId === reqId);
+        if (!solicitud || !solicitud.paquetes.length) {
+          selPkg.innerHTML = '<option value="">No hay paquetes disponibles</option>';
+          selPkg.disabled = true;
+          btn.disabled = true;
+          info.classList.add('hidden');
+          return;
+        }
+
+        selPkg.innerHTML = '<option value="">-- Selecciona un paquete --</option>' +
+          solicitud.paquetes.map(pkg => `<option value="${pkg}">${pkg}</option>`).join('');
+        selPkg.disabled = false;
+        
+        // Auto-seleccionar si solo hay un paquete
+        if (solicitud.paquetes.length === 1) {
+          selPkg.value = solicitud.paquetes[0];
+          updatePackageInfo(solicitud, solicitud.paquetes[0]);
+          btn.disabled = false;
+        }
+      }
+
+      selPkg.addEventListener('change', () => {
+        const reqId = selReq.value;
+        const pkgId = selPkg.value;
+        if (!reqId || !pkgId) {
+          btn.disabled = true;
+          info.classList.add('hidden');
+          return;
+        }
+        const solicitud = readySolicitudes.find(s => s.requestId === reqId);
+        updatePackageInfo(solicitud, pkgId);
+        btn.disabled = false;
+      });
+
+      function updatePackageInfo(solicitud, packageId) {
+        details.innerHTML = `
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div><strong>Solicitud:</strong> ${solicitud.requestId}</div>
+            <div><strong>Paquete:</strong> ${packageId}</div>
+            <div><strong>Período:</strong> ${solicitud.fecha_inicio} al ${solicitud.fecha_fin}</div>
+            <div><strong>Tipo:</strong> ${solicitud.tipo === 'emitidos' ? 'Emitidos' : 'Recibidos'}</div>
+            <div><strong>Formato:</strong> ${solicitud.formato === 'xml' ? 'XML (Comprobantes)' : 'Metadata'}</div>
+            <div><strong>Estado:</strong> ${getEstadoBadge(solicitud.estado)}</div>
+          </div>`;
+        info.classList.remove('hidden');
+      }
+
+      btn.addEventListener('click', async () => {
+        const reqId = selReq.value;
+        const pkgId = selPkg.value;
+        if (!reqId || !pkgId) return;
+
+        btn.disabled = true;
+        btn.textContent = 'Descargando...';
+        
+        const fd = new FormData();
+        fd.append('action', 'descargar');
+        fd.append('cerfile', cerFile);
+        fd.append('keyfile', keyFile);
+        fd.append('password', password);
+        fd.append('requestId', reqId);
+        fd.append('packageId', pkgId);
+
+        try {
+          const response = await fetch('api.php', { method: 'POST', body: fd });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${reqId}_${pkgId}.zip`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+          
+          showMessage('Descarga completada exitosamente', 'success');
+        } catch (e) {
+          showMessage(`Error en descarga: ${e.message}`, 'error');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Descargar ZIP';
+        }
+      });
+
+      loadReqs();
+    }
+
+    // 5. Explorar Paquetes - COMPLETADO
+    function loadExplorarTab() {
+      document.getElementById('content').innerHTML = `
+        <div class="space-y-4">
+          <h2 class="text-2xl font-semibold text-center mb-4">Explorar Contenido de Paquetes</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block mb-1 font-medium">Solicitud</label>
+              <select id="selectExploreReq" class="w-full p-2 border rounded">
+                <option value="">Cargando...</option>
+              </select>
+            </div>
+            <div>
+              <label class="block mb-1 font-medium">Paquete</label>
+              <select id="selectExplorePkg" class="w-full p-2 border rounded" disabled>
+                <option value="">Selecciona solicitud primero</option>
+              </select>
+            </div>
+            <div class="flex items-end">
+              <button id="btnExplore" class="w-full bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700" disabled>Explorar Contenido</button>
+            </div>
+          </div>
+        </div>`;
+      
+      const selReq = document.getElementById('selectExploreReq');
+      const selPkg = document.getElementById('selectExplorePkg');
+      const btn = document.getElementById('btnExplore');
+      
+      let availableSolicitudes = [];
+
+      async function loadExploreReqs() {
+        if (!cerFile || !keyFile || !password) return showMessage('Valida la FIEL primero', 'error');
+        
+        showLoading('Cargando solicitudes...');
+        const fd = new FormData();
+        fd.append('action', 'listarSolicitudes');
+        fd.append('cerfile', cerFile);
+        fd.append('keyfile', keyFile);
+        fd.append('password', password);
+        const r = await postData(fd);
+        hideLoading();
+        
+        if (!r.success) return showMessage(r.message, 'error');
+        
+        availableSolicitudes = r.solicitudes.filter(s => 
+          Array.isArray(s.paquetes) && s.paquetes.length > 0
+        );
+        
+        if (availableSolicitudes.length === 0) {
+          selReq.innerHTML = '<option value="">No hay paquetes para explorar</option>';
+          selReq.disabled = true;
+          return;
+        }
+        
+        selReq.innerHTML = '<option value="">-- Selecciona una solicitud --</option>' + 
+          availableSolicitudes.map(s => {
+            const paquetesCount = s.paquetes.length;
+            return `<option value="${s.requestId}">${s.requestId.substring(0, 12)}... (${paquetesCount} paquete${paquetesCount > 1 ? 's' : ''})</option>`;
+          }).join('');
+        selReq.disabled = false;
+      }
+
+      selReq.addEventListener('change', () => {
+        const reqId = selReq.value;
+        if (!reqId) {
+          selPkg.innerHTML = '<option value="">Selecciona solicitud primero</option>';
+          selPkg.disabled = true;
+          btn.disabled = true;
+          return;
+        }
+        
+        const solicitud = availableSolicitudes.find(s => s.requestId === reqId);
+        if (!solicitud || !solicitud.paquetes.length) {
+          selPkg.innerHTML = '<option value="">No hay paquetes disponibles</option>';
+          selPkg.disabled = true;
+          btn.disabled = true;
+          return;
+        }
+
+        selPkg.innerHTML = '<option value="">-- Selecciona un paquete --</option>' +
+          solicitud.paquetes.map(pkg => `<option value="${pkg}">${pkg}</option>`).join('');
+        selPkg.disabled = false;
+      });
+
+      selPkg.addEventListener('change', () => {
+        btn.disabled = !selPkg.value;
+      });
+
+      btn.addEventListener('click', async () => {
+        const reqId = selReq.value;
+        const pkgId = selPkg.value;
+        if (!reqId || !pkgId) return;
+
+        btn.disabled = true;
+        btn.textContent = 'Explorando...';
+        
+        const fd = new FormData();
+        fd.append('action', 'leerPaquete');
+        fd.append('cerfile', cerFile);
+        fd.append('keyfile', keyFile);
+        fd.append('password', password);
+        fd.append('requestId', reqId);
+        fd.append('packageId', pkgId);
+
+        showLoading('Leyendo contenido del paquete...');
+        const res = await postData(fd);
+        hideLoading();
+        
+        btn.disabled = false;
+        btn.textContent = 'Explorar Contenido';
+
+        if (res.success) {
+          showExploreModal(res, reqId, pkgId);
+        } else {
+          showMessage(`Error: ${res.message}`, 'error');
+        }
+      });
+
+      loadExploreReqs();
+    }
+
+    // Modal para mostrar contenido del paquete
+    function showExploreModal(data, reqId, pkgId) {
+      const info = document.getElementById('packageInfo');
+      const content = document.getElementById('packageContent');
+      
+      info.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          <div><strong>Solicitud:</strong> ${reqId.substring(0, 16)}...</div>
+          <div><strong>Paquete:</strong> ${pkgId}</div>
+          <div><strong>Tipo:</strong> ${data.tipo === 'metadata' ? 'Metadata' : 'CFDI XML'}</div>
+          <div><strong>Registros:</strong> ${data.registros}</div>
+        </div>`;
+      
+      if (data.tipo === 'metadata') {
+        // Mostrar metadata
+        content.innerHTML = `
+          <table class="w-full text-xs border-collapse">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="border px-2 py-1 text-left">UUID</th>
+                <th class="border px-2 py-1 text-left">Fecha</th>
+                <th class="border px-2 py-1 text-left">Emisor</th>
+                <th class="border px-2 py-1 text-left">Receptor</th>
+                <th class="border px-2 py-1 text-right">Total</th>
+                <th class="border px-2 py-1 text-left">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.contenido.map(item => `
+                <tr class="hover:bg-gray-50">
+                  <td class="border px-2 py-1 font-mono">${item.uuid.substring(0, 8)}...</td>
+                  <td class="border px-2 py-1">${item.fechaEmision || 'N/A'}</td>
+                  <td class="border px-2 py-1">
+                    <div class="font-medium">${item.rfcEmisor}</div>
+                    <div class="text-gray-500">${(item.nombreEmisor || '').substring(0, 30)}...</div>
+                  </td>
+                  <td class="border px-2 py-1">
+                    <div class="font-medium">${item.rfcReceptor}</div>
+                    <div class="text-gray-500">${(item.nombreReceptor || '').substring(0, 30)}...</div>
+                  </td>
+                  <td class="border px-2 py-1 text-right">$${item.total || '0.00'}</td>
+                  <td class="border px-2 py-1">${item.estatusComprobante || 'N/A'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>`;
+      } else {
+        // Mostrar CFDI
+        content.innerHTML = `
+          <table class="w-full text-xs border-collapse">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="border px-2 py-1 text-left">UUID</th>
+                <th class="border px-2 py-1 text-right">Tamaño</th>
+                <th class="border px-2 py-1 text-left">Vista previa</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.contenido.map(item => `
+                <tr class="hover:bg-gray-50">
+                  <td class="border px-2 py-1 font-mono">${item.uuid}</td>
+                  <td class="border px-2 py-1 text-right">${(item.tamano / 1024).toFixed(1)} KB</td>
+                  <td class="border px-2 py-1 text-gray-600">${item.preview}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>`;
+      }
+      
+      document.getElementById('exploreModal').classList.remove('hidden');
+    }
+    
+    document.getElementById('closeExplore').addEventListener('click', () => {
+      document.getElementById('exploreModal').classList.add('hidden');
+    });
+
+    // Event listeners para cerrar modales al hacer clic fuera
+    document.getElementById('historyModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('historyModal')) {
+        document.getElementById('historyModal').classList.add('hidden');
+      }
+    });
+
+    document.getElementById('exploreModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('exploreModal')) {
+        document.getElementById('exploreModal').classList.add('hidden');
+      }
+    });
+
+    // Cargar tab de configuración por defecto
+    loadConfigTab();
+  </script>
+</body>
+</html>

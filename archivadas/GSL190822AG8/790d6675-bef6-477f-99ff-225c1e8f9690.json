@@ -1,0 +1,67 @@
+{
+    "request_id": "790d6675-bef6-477f-99ff-225c1e8f9690",
+    "fecha_solicitud": "2025-06-18 15:16:51",
+    "estado": "listo",
+    "paquetes": [
+        "790D6675-BEF6-477F-99FF-225C1E8F9690_01"
+    ],
+    "tipo": "recibidos",
+    "formato": "xml",
+    "status": "active",
+    "fecha_inicio": "2021-01-01",
+    "fecha_fin": "2021-12-31",
+    "verifications": [
+        {
+            "timestamp": "2025-06-18 15:17:03",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-18 16:58:39",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-19 08:56:09",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-19 12:28:53",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-19 17:09:28",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-20 09:35:41",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud está lista. 1 paquete(s) disponible(s)",
+            "paquetes": [
+                "790D6675-BEF6-477F-99FF-225C1E8F9690_01"
+            ],
+            "isFinished": true
+        }
+    ],
+    "downloads": [
+        {
+            "packageId": "790D6675-BEF6-477F-99FF-225C1E8F9690_01",
+            "timestamp": "2025-06-20 09:37:57",
+            "filename": "790d6675-bef6-477f-99ff-225c1e8f9690_790D6675-BEF6-477F-99FF-225C1E8F9690_01.zip",
+            "size": 3475291
+        }
+    ]
+}

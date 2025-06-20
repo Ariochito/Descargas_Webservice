@@ -1,0 +1,62 @@
+{
+    "request_id": "2e5c38b0-630a-460c-a4a9-e8f2854d316e",
+    "fecha_solicitud": "2025-06-17 16:53:32",
+    "estado": "rechazado",
+    "paquetes": [],
+    "tipo": "emitidos",
+    "formato": "metadata",
+    "status": "all",
+    "fecha_inicio": "2025-03-01",
+    "fecha_fin": "2025-03-02",
+    "verifications": [
+        {
+            "timestamp": "2025-06-17 16:53:44",
+            "codigoEstado": 5000,
+            "mensaje": "Solicitud Aceptada",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-17 16:54:08",
+            "codigoEstado": 5000,
+            "mensaje": "Solicitud Aceptada",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-18 11:27:13",
+            "codigoEstado": 5000,
+            "mensaje": "Solicitud Aceptada",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-18 14:28:01",
+            "codigoEstado": 5000,
+            "mensaje": "Solicitud Aceptada",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-18 15:17:30",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-18 16:59:01",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-19 08:56:30",
+            "codigoEstado": null,
+            "mensaje": "Solicitud rechazada: No se encontró la información: Indica que no generó paquetes por falta de información.",
+            "paquetes": [],
+            "isFinished": true
+        }
+    ]
+}

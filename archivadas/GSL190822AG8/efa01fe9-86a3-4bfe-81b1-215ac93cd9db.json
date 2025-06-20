@@ -1,0 +1,93 @@
+{
+    "request_id": "efa01fe9-86a3-4bfe-81b1-215ac93cd9db",
+    "estado": "listo",
+    "paquetes": [
+        "EFA01FE9-86A3-4BFE-81B1-215AC93CD9DB_01"
+    ],
+    "verifications": [
+        {
+            "timestamp": "2025-06-18 13:07:53",
+            "codigoEstado": 5000,
+            "mensaje": "Solicitud Aceptada",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-18 14:28:50",
+            "codigoEstado": 5000,
+            "mensaje": "Solicitud Aceptada",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-18 15:18:19",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-18 16:59:20",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-19 08:56:39",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-19 12:29:20",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-19 17:09:21",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-19 17:09:59",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-20 09:36:29",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud está lista. 1 paquete(s) disponible(s)",
+            "paquetes": [
+                "EFA01FE9-86A3-4BFE-81B1-215AC93CD9DB_01"
+            ],
+            "isFinished": true
+        },
+        {
+            "timestamp": "2025-06-20 09:40:49",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud está lista. 1 paquete(s) disponible(s)",
+            "paquetes": [
+                "EFA01FE9-86A3-4BFE-81B1-215AC93CD9DB_01"
+            ],
+            "isFinished": true
+        }
+    ],
+    "downloads": [
+        {
+            "packageId": "EFA01FE9-86A3-4BFE-81B1-215AC93CD9DB_01",
+            "timestamp": "2025-06-20 09:40:54"
+        },
+        {
+            "packageId": "EFA01FE9-86A3-4BFE-81B1-215AC93CD9DB_01",
+            "timestamp": "2025-06-20 09:40:57"
+        }
+    ]
+}

@@ -1,0 +1,46 @@
+{
+    "request_id": "6541ba01-9faa-470f-8ce8-0c3b31085a70",
+    "estado": "listo",
+    "paquetes": [
+        "6541BA01-9FAA-470F-8CE8-0C3B31085A70_01"
+    ],
+    "verifications": [
+        {
+            "timestamp": "2025-06-18 11:27:56",
+            "codigoEstado": 5000,
+            "mensaje": "Solicitud Aceptada",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-18 14:28:27",
+            "codigoEstado": 5000,
+            "mensaje": "Solicitud Aceptada",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-18 15:17:57",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-18 16:59:16",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-19 08:56:36",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud está lista. 1 paquete(s) disponible(s)",
+            "paquetes": [
+                "6541BA01-9FAA-470F-8CE8-0C3B31085A70_01"
+            ],
+            "isFinished": true
+        }
+    ]
+}

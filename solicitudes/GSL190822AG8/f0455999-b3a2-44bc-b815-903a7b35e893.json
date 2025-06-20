@@ -1,0 +1,65 @@
+{
+    "request_id": "f0455999-b3a2-44bc-b815-903a7b35e893",
+    "fecha_solicitud": "2025-06-18 15:16:38",
+    "estado": "listo",
+    "paquetes": [
+        "F0455999-B3A2-44BC-B815-903A7B35E893_01"
+    ],
+    "tipo": "emitidos",
+    "formato": "metadata",
+    "status": "all",
+    "fecha_inicio": "2021-01-01",
+    "fecha_fin": "2021-12-31",
+    "verifications": [
+        {
+            "timestamp": "2025-06-18 15:17:09",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-18 16:58:46",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-19 08:56:14",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-19 12:28:59",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-19 17:09:36",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud fue aceptada y está en proceso",
+            "paquetes": [],
+            "isFinished": false
+        },
+        {
+            "timestamp": "2025-06-20 09:35:52",
+            "codigoEstado": 5000,
+            "mensaje": "La solicitud está lista. 1 paquete(s) disponible(s)",
+            "paquetes": [
+                "F0455999-B3A2-44BC-B815-903A7B35E893_01"
+            ],
+            "isFinished": true
+        }
+    ],
+    "downloads": [
+        {
+            "packageId": "F0455999-B3A2-44BC-B815-903A7B35E893_01",
+            "timestamp": "2025-06-20 09:44:03"
+        }
+    ]
+}
